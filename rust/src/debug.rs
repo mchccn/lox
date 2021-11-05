@@ -1,24 +1,41 @@
-use crate::chunk;
-use crate::common;
+use crate::chunk::*;
+use crate::common::*;
+use crate::value::*;
 
-pub fn disassemble_chunk(chunk: &chunk::Chunk, name: &str) {
+pub fn disassemble_chunk(chunk: &Chunk, name: &str) {
     println!("== {} ==", name);
+
+    let mut table = OpCodeTable::new();
+
+    table.insert(OpCode::OpReturn, 0);
+    table.insert(OpCode::OpConstant, 1);
 
     let mut offset = 0;
 
     while offset < chunk.code.len() {
-        offset = disassemble_instruction(chunk, &mut offset);
+        offset = disassemble_instruction(chunk, &mut offset, &table);
     }
 }
 
-pub fn disassemble_instruction(chunk: &chunk::Chunk, offset: &mut usize) -> usize {
+pub fn disassemble_instruction(chunk: &Chunk, offset: &mut usize, table: &OpCodeTable) -> usize {
+    let padding = chunk.lines.iter().map(|l| l.to_string().len()).max().unwrap();
+
+    if *offset > 0 && chunk.lines[*offset] == chunk.lines[*offset - 1] {
+        print!("{}  | ", " ".repeat(padding - chunk.lines[*offset].to_string().len()));
+    } else {
+        print!("{}{} | ", chunk.lines[*offset], " ".repeat(padding - chunk.lines[*offset].to_string().len()));
+    }
+
     print!("{:04} ", offset);
 
     let instruction = &chunk.code[*offset];
 
     match instruction {
-        common::OpCode::OpReturn => {
-            return simple_instruction("OP_RETURN", offset)
+        OpCode::OpReturn => {
+            return simple_instruction("OP_RETURN", offset, table);
+        }
+        OpCode::OpConstant => {
+            return constant_instruction("OP_CONSTANT", chunk, offset, table);
         }
         _ => {
             println!("Unknown opcode {:?}", instruction);
@@ -27,8 +44,20 @@ pub fn disassemble_instruction(chunk: &chunk::Chunk, offset: &mut usize) -> usiz
     }
 }
 
-fn simple_instruction(name: &str, offset: &usize) -> usize {
+fn simple_instruction(name: &str, offset: &usize, table: &OpCodeTable) -> usize {
     println!("{}", name);
+
+    return *offset + 1;
+}
+
+fn constant_instruction(name: &str, chunk: &Chunk, offset: &usize, table: &OpCodeTable) -> usize {
+    let constant = &chunk.code[*offset + 1];
+
+    print!("{:<16} {} '", name, table[&constant]);
+
+    print_value(chunk.constants.values[table[&constant]]);
+
+    println!("'");
 
     return *offset + 1;
 }

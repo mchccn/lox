@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "main": "dist/index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "rust:run": "cd rust && clear && cargo run --message-format short && cd .."
     },
     "keywords": [],
     "author": "cursorsdottsx <cursors.dev@gmail.com>",
