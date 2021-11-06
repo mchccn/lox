@@ -5,9 +5,7 @@ pub struct ValueArray {
 }
 
 pub fn init_value_array() -> ValueArray {
-    ValueArray {
-        values: Vec::new(),
-    }
+    ValueArray { values: Vec::new() }
 }
 
 pub fn write_value_array(array: &mut ValueArray, value: Value) {

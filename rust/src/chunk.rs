@@ -2,7 +2,7 @@ use crate::common::*;
 use crate::value::*;
 
 pub struct Chunk {
-    pub code: Vec<OpCode>,
+    pub code: Vec<u8>,
     pub lines: Vec<i32>,
     pub constants: ValueArray,
 }
@@ -15,13 +15,18 @@ pub fn init_chunk() -> Chunk {
     }
 }
 
-pub fn write_chunk(chunk: &mut Chunk, op: OpCode, line: i32) {
-    chunk.code.push(op);
+pub fn write_chunk_opcode(chunk: &mut Chunk, op: OpCode, line: i32) {
+    chunk.code.push(opcode_to_u8(op));
     chunk.lines.push(line);
 }
 
-pub fn add_constant(chunk: &mut Chunk, value: Value) -> usize {
+pub fn write_chunk_u8(chunk: &mut Chunk, value: u8, line: i32) {
+    chunk.code.push(value);
+    chunk.lines.push(line);
+}
+
+pub fn add_constant(chunk: &mut Chunk, value: Value) -> u8 {
     write_value_array(&mut chunk.constants, value);
 
-    return chunk.constants.values.len() - 1;
+    return (chunk.constants.values.len() - 1) as u8;
 }
