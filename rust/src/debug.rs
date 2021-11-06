@@ -5,16 +5,15 @@ use crate::value::*;
 pub fn disassemble_chunk(chunk: &Chunk, name: &str) {
     println!("== {} ==", name);
 
-    let mut table = OpCodeTable::new();
-
-    table.insert(OpCode::OpReturn, 0);
-    table.insert(OpCode::OpConstant, 1);
+    let table = op_code_table();
 
     let mut offset = 0;
 
     while offset < chunk.code.len() {
         offset = disassemble_instruction(chunk, &mut offset, &table);
     }
+
+    println!("==={}===", "=".repeat(name.len()));
 }
 
 pub fn disassemble_instruction(chunk: &Chunk, offset: &mut usize, table: &OpCodeTable) -> usize {
