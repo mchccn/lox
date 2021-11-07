@@ -1,10 +1,20 @@
 use crate::common::*;
 use crate::value::*;
 
+
+#[derive(Clone)]
 pub struct Chunk {
     pub code: Vec<u8>,
     pub lines: Vec<i32>,
     pub constants: ValueArray,
+}
+
+pub fn copy_chunk(chunk: &Chunk) -> Chunk {
+    Chunk {
+        code: chunk.code.clone(),
+        lines: chunk.lines.clone(),
+        constants: chunk.constants.clone(),
+    }
 }
 
 pub fn init_chunk() -> Chunk {

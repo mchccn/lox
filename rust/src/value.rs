@@ -1,5 +1,6 @@
 pub type Value = f64;
 
+#[derive(Clone)]
 pub struct ValueArray {
     pub values: Vec<Value>,
 }

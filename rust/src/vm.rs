@@ -2,9 +2,11 @@ use crate::chunk::*;
 use crate::common::*;
 use crate::debug::*;
 use crate::value::*;
+use crate::compiler::*;
 
 pub trait Interpreter {
-    fn interpret(self, disassemble: bool) -> InterpretResult;
+    fn interpret(&mut self, source: String, disassemble: bool) -> InterpretResult;
+    fn run(&mut self, disassemble: bool) -> InterpretResult;
 }
 
 pub struct VirtualMachine {
@@ -14,7 +16,24 @@ pub struct VirtualMachine {
 }
 
 impl Interpreter for VirtualMachine {
-    fn interpret(mut self, disassemble: bool) -> InterpretResult {
+    fn interpret(&mut self, source: String, disassemble: bool) -> InterpretResult {
+        let chunk = init_chunk();
+
+        let mut compiler = init_compiler(source);
+
+        let result = compiler.compile(chunk);
+
+        self.chunk = result.chunk;
+        self.ip = 0;
+
+        println!("{:?}", self.chunk.code);
+
+        let result = self.run(disassemble);
+
+        return result
+    }
+
+    fn run(&mut self, disassemble: bool) -> InterpretResult {
         let table = op_code_table();
 
         loop {
@@ -100,9 +119,9 @@ impl Interpreter for VirtualMachine {
     }
 }
 
-pub fn init_vm(chunk: Chunk) -> VirtualMachine {
+pub fn init_vm() -> VirtualMachine {
     VirtualMachine {
-        chunk,
+        chunk: init_chunk(),
         ip: 0,
         stack: vec![],
     }

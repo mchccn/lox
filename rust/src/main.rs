@@ -2,50 +2,66 @@ mod chunk;
 mod common;
 mod debug;
 mod value;
+mod scanner;
+mod compiler;
 mod vm;
 
 use chunk::*;
 use common::*;
 use debug::*;
 use value::*;
+use scanner::*;
+use compiler::*;
 use vm::*;
 
+use std::fs::read_to_string;
+use std::io::{self, BufRead, Write};
+
 fn main() {
-    let mut chunk = init_chunk();
+    let args = std::env::args().collect::<Vec<String>>();
 
-    write_chunk_opcode(&mut chunk, OpCode::OpConstant, 1);
+    println!("{:?}", args);
 
-    let constant = add_constant(&mut chunk, 1.2);
+    if args.len() == 1 {
+        let stdin = io::stdin();
+        
+        print!("> ");
 
-    write_chunk_u8(&mut chunk, constant, 1);
+        let _ = io::stdout().flush();
 
-    write_chunk_opcode(&mut chunk, OpCode::OpConstant, 1);
+        for line in stdin.lock().lines() {
+            let mut vm = init_vm();
 
-    let constant = add_constant(&mut chunk, 3.4);
+            vm.interpret(line.unwrap(), false);
 
-    write_chunk_u8(&mut chunk, constant, 1);
+            print!("> ");
 
-    write_chunk_opcode(&mut chunk, OpCode::OpAdd, 1);
+            let _ = io::stdout().flush();
+        }
+    } else if args.len() == 2 {
+        let file_name = &args[1];
 
-    let constant = add_constant(&mut chunk, 5.6);
+        let file_contents = read_to_string(file_name).expect(&format!("Could not open file \"{}\".", file_name));
 
-    write_chunk_opcode(&mut chunk, OpCode::OpConstant, 1);
+        println!("{}", file_contents);
 
-    write_chunk_u8(&mut chunk, constant, 1);
+        let mut vm = init_vm();
 
-    write_chunk_opcode(&mut chunk, OpCode::OpDivide, 1);
+        let result = vm.interpret(file_contents, false);
 
-    write_chunk_opcode(&mut chunk, OpCode::OpNegate, 1);
-
-    write_chunk_opcode(&mut chunk, OpCode::OpReturn, 2);
-
-    println!("--- Disassembler ---");
-
-    disassemble_chunk(&chunk, "Chunk");
-
-    println!("--- Execution ---");
-
-    let vm = init_vm(chunk);
-
-    vm.interpret(true);
+        match result {
+            InterpretResult::InterpretCompilerError => {
+                std::process::exit(65);
+            }
+            InterpretResult::InterpretRuntimeError => {
+                std::process::exit(70);
+            }
+            _ => {
+                std::process::exit(0);
+            }
+        }
+    } else {
+        println!("Usage: rlox [path]");
+        std::process::exit(64);
+    }
 }
