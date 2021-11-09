@@ -2,8 +2,65 @@ use crate::common::*;
 use crate::scanner::*;
 use crate::value::*;
 use crate::chunk::*;
+use std::collections::HashMap;
 
-// continue with parsePrecendence in the book
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum Precedence {
+    PrecNone,
+    PrecAssignment,
+    PrecOr,
+    PrecAnd,
+    PrecEquality,
+    PrecComparison,
+    PrecTerm,
+    PrecFactor,
+    PrecUnary,
+    PrecCall,
+    PrecPrimary,
+}
+
+pub type PrecTable = HashMap<Precedence, u8>;
+
+pub fn prec_table() -> PrecTable {
+    let mut table = PrecTable::new();
+
+    table.insert(Precedence::PrecNone, 0);
+    table.insert(Precedence::PrecAssignment, 1);
+    table.insert(Precedence::PrecOr, 2);
+    table.insert(Precedence::PrecAnd, 3);
+    table.insert(Precedence::PrecEquality, 4);
+    table.insert(Precedence::PrecComparison, 5);
+    table.insert(Precedence::PrecTerm, 6);
+    table.insert(Precedence::PrecFactor, 7);
+    table.insert(Precedence::PrecUnary, 8);
+    table.insert(Precedence::PrecCall, 9);
+    table.insert(Precedence::PrecPrimary, 10);
+
+    return table;
+}
+
+pub fn precendence_to_order(prec: Precedence) -> u8 {
+    let table = prec_table();
+
+    return *table.get(&prec).unwrap();
+}
+
+pub fn order_to_precendence(order: u8) -> Precedence {
+    let table = prec_table();
+
+    for (prec, prec_order) in table.iter() {
+        if *prec_order == order {
+            return *prec;
+        }
+    }
+
+    panic!("Invalid precedence order: {}", order);
+}
+
+pub struct ParseRule {
+    // how to store the functions to parse tho...
+    precendence: Precedence,
+}
 
 pub trait Parser {
     fn compile(&mut self, chunk: Chunk) -> CompilerResult;
@@ -20,8 +77,10 @@ pub trait Parser {
     fn emit_constant(&mut self, value: Value);
     fn make_constant(&mut self, value: Value) -> u8;
     fn number(&mut self);
+    fn binary(&mut self);
     fn unary(&mut self);
     fn grouping(&mut self);
+    fn parse_precendence(&mut self, precendence: Precedence);
 }
 
 pub struct Compiler {
@@ -78,6 +137,7 @@ impl Parser for Compiler {
     }
 
     fn expression(&mut self) {
+        self.parse_precendence(Precedence::PrecAssignment);
     }
 
     fn advance(&mut self) {
@@ -176,7 +236,7 @@ impl Parser for Compiler {
     fn unary(&mut self) {
         let kind = self.previous.kind;
 
-        self.expression();
+        self.parse_precendence(Precedence::PrecUnary);
 
         match kind {
             // TokenKind::Bang => self.emit_byte(opcode_to_u8(OpCode::OpNot)),
@@ -185,11 +245,33 @@ impl Parser for Compiler {
         }
     }
 
+    fn binary(&mut self) {
+        let kind = self.previous.kind;
+
+        let rule = self.get_rule(kind);
+
+        self.parse_precendence(order_to_precendence(precendence_to_order(rule.precendence) + 1));
+
+        let instruction = match kind {
+            TokenKind::Plus => opcode_to_u8(OpCode::OpAdd),
+            TokenKind::Minus => opcode_to_u8(OpCode::OpSubtract),
+            TokenKind::Star => opcode_to_u8(OpCode::OpMultiply),
+            TokenKind::Slash => opcode_to_u8(OpCode::OpDivide),
+            // TokenKind::Equal => opcode_to_u8(OpCode::OpEqual),
+            // TokenKind::BangEqual => opcode_to_u8(OpCode::OpNotEqual),
+            // TokenKind::Greater => opcode_to_u8(OpCode::OpGreater),
+        };
+
+        self.emit_byte(instruction);
+    }
+
     fn grouping(&mut self) {
         self.expression();
 
         self.consume(TokenKind::RightParen, "Expect ')' after expression.");
     }
+
+    fn parse_precendence(&mut self, precendence: Precedence) {}
 }
 
 pub fn init_compiler(source: String) -> Compiler {
