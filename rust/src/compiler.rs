@@ -1,6 +1,9 @@
 use crate::common::*;
 use crate::scanner::*;
+use crate::value::*;
 use crate::chunk::*;
+
+// continue with parsePrecendence in the book
 
 pub trait Parser {
     fn compile(&mut self, chunk: Chunk) -> CompilerResult;
@@ -14,6 +17,11 @@ pub trait Parser {
     fn emit_return(&mut self);
     fn end_compiler(&mut self);
     fn current_chunk(&mut self) -> &mut Chunk;
+    fn emit_constant(&mut self, value: Value);
+    fn make_constant(&mut self, value: Value) -> u8;
+    fn number(&mut self);
+    fn unary(&mut self);
+    fn grouping(&mut self);
 }
 
 pub struct Compiler {
@@ -55,7 +63,7 @@ impl Parser for Compiler {
         //         print!("     | ");
         //     }
 
-        //     println!("{:?} {:?} '{:?}'", token.kind, token.start, self.source[token.start .. token.start + token.length]);
+        //     println!("{:<12} {:>4} '{}'", format!("{:?}", token.kind), token.start, self.source[token.start .. token.start + token.length].to_string());
 
         //     match token.kind {
         //         TokenKind::Eof => break,
@@ -140,6 +148,47 @@ impl Parser for Compiler {
 
     fn current_chunk(&mut self) -> &mut Chunk {
         &mut self.chunk
+    }
+
+    fn emit_constant(&mut self, value: Value) {
+        let constant = self.make_constant(value);
+
+        self.emit_bytes(opcode_to_u8(OpCode::OpConstant), constant)
+    }
+
+    fn make_constant(&mut self, value: Value) -> u8 {
+        let constant = add_constant(&mut self.chunk, value);
+
+        if constant > 255 {
+            self.error_at_current("Too many constants in one chunk.".to_string());
+            return 0;
+        }
+
+        return constant as u8;
+    }
+
+    fn number(&mut self) {
+        let value = self.source[self.previous.start .. self.previous.start + self.previous.length].to_string().parse::<f64>().unwrap();
+
+        self.emit_constant(value);
+    }
+
+    fn unary(&mut self) {
+        let kind = self.previous.kind;
+
+        self.expression();
+
+        match kind {
+            // TokenKind::Bang => self.emit_byte(opcode_to_u8(OpCode::OpNot)),
+            TokenKind::Minus => self.emit_byte(opcode_to_u8(OpCode::OpNegate)),
+            _ => {}
+        }
+    }
+
+    fn grouping(&mut self) {
+        self.expression();
+
+        self.consume(TokenKind::RightParen, "Expect ')' after expression.");
     }
 }
 

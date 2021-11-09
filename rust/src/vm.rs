@@ -26,8 +26,6 @@ impl Interpreter for VirtualMachine {
         self.chunk = result.chunk;
         self.ip = 0;
 
-        println!("{:?}", self.chunk.code);
-
         let result = self.run(disassemble);
 
         return result
