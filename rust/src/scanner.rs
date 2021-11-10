@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum TokenKind {
     LeftParen,
     RightParen,
@@ -38,8 +38,8 @@ pub enum TokenKind {
     True,
     Var,
     While,
-    Eof,
     Err,
+    Eof,
 }
 
 #[derive(Clone, Copy)]
@@ -81,7 +81,7 @@ impl TokenScanner for Scanner {
         self.skip_whitespace();
 
         self.start = self.current;
-        
+
         if self.is_at_end() {
             return self.make_token(TokenKind::Eof);
         }
@@ -106,15 +106,7 @@ impl TokenScanner for Scanner {
             '-' => self.make_token(TokenKind::Minus),
             '+' => self.make_token(TokenKind::Plus),
             ';' => self.make_token(TokenKind::Semicolon),
-            '/' => {
-                if self.peek_next() == '/' {
-                    while self.peek() != '\n' && !self.is_at_end() {
-                        self.advance();
-                    }
-                }
-
-                return self.next_token();
-            },
+            '/' => self.make_token(TokenKind::Slash),
             '*' => self.make_token(TokenKind::Star),
             '!' => {
                 if self.match_char('=') {
@@ -122,32 +114,31 @@ impl TokenScanner for Scanner {
                 } else {
                     self.make_token(TokenKind::Bang)
                 }
-            },
+            }
             '=' => {
                 if self.match_char('=') {
                     self.make_token(TokenKind::EqualEqual)
                 } else {
                     self.make_token(TokenKind::Equal)
                 }
-            },
+            }
             '>' => {
                 if self.match_char('=') {
                     self.make_token(TokenKind::GreaterEqual)
                 } else {
                     self.make_token(TokenKind::Greater)
                 }
-            },
+            }
             '<' => {
                 if self.match_char('=') {
                     self.make_token(TokenKind::LessEqual)
                 } else {
                     self.make_token(TokenKind::Less)
                 }
-            },
+            }
             '"' => self.string(),
             _ => self.error_token("Unexpected character.".to_string()),
         }
-
     }
 
     fn string(&mut self) -> Token {
@@ -254,7 +245,7 @@ impl TokenScanner for Scanner {
 
         if c == '\n' {
             self.line += 1;
-            self.col = 0;
+            self.col = 1;
         }
 
         return c;
@@ -280,6 +271,10 @@ impl TokenScanner for Scanner {
 
             if c == ' ' || c == '\r' || c == '\t' || c == '\n' {
                 self.advance();
+            } else if c == '/' && self.peek_next() == '/' {
+                while self.peek() != '\n' && !self.is_at_end() {
+                    self.advance();
+                }
             } else {
                 break;
             }
@@ -307,9 +302,9 @@ impl TokenScanner for Scanner {
     }
 
     fn is_alpha(&mut self, expected: char) -> bool {
-        (expected >= 'a' && expected <= 'z') ||
-        (expected >= 'A' && expected <= 'Z') ||
-        expected == '_'
+        (expected >= 'a' && expected <= 'z')
+            || (expected >= 'A' && expected <= 'Z')
+            || expected == '_'
     }
 }
 

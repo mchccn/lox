@@ -1,8 +1,8 @@
 use crate::chunk::*;
 use crate::common::*;
+use crate::compiler::*;
 use crate::debug::*;
 use crate::value::*;
-use crate::compiler::*;
 
 pub trait Interpreter {
     fn interpret(&mut self, source: String, disassemble: bool) -> InterpretResult;
@@ -28,7 +28,7 @@ impl Interpreter for VirtualMachine {
 
         let result = self.run(disassemble);
 
-        return result
+        return result;
     }
 
     fn run(&mut self, disassemble: bool) -> InterpretResult {

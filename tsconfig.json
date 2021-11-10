@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "outDir": "./dist",
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitThis": true,
+        "alwaysStrict": true,
+        "noUnusedParameters": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "skipLibCheck": true,
+        "lib": ["esnext", "esnext.asynciterable"],
+        "types": ["node"],
+        "typeRoots": ["./src/typings"]
+    },
+    "exclude": ["node_modules"],
+    "include": ["src/**/*.ts"]
+}

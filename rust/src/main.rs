@@ -1,17 +1,17 @@
 mod chunk;
 mod common;
-mod debug;
-mod value;
-mod scanner;
 mod compiler;
+mod debug;
+mod scanner;
+mod value;
 mod vm;
 
 use chunk::*;
 use common::*;
-use debug::*;
-use value::*;
-use scanner::*;
 use compiler::*;
+use debug::*;
+use scanner::*;
+use value::*;
 use vm::*;
 
 use std::fs::read_to_string;
@@ -24,7 +24,7 @@ fn main() {
 
     if args.len() == 1 {
         let stdin = io::stdin();
-        
+
         print!("> ");
 
         let _ = io::stdout().flush();
@@ -41,7 +41,8 @@ fn main() {
     } else if args.len() == 2 {
         let file_name = &args[1];
 
-        let file_contents = read_to_string(file_name).expect(&format!("Could not open file \"{}\".", file_name));
+        let file_contents =
+            read_to_string(file_name).expect(&format!("Could not open file \"{}\".", file_name));
 
         println!("{}", file_contents);
 
